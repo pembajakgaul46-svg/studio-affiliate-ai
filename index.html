@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Photo Studio Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .gradient-border {
+            position: relative;
+            background: #1e293b;
+            border-radius: 1rem;
+        }
+
+        .gradient-border::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(45deg, #6366f1, #a855f7, #ec4899);
+            border-radius: 1.1rem;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .loader-ring {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #6366f1;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .chip-active {
+            background: #6366f1 !important;
+            border-color: #818cf8 !important;
+            color: white !important;
+        }
+
+        .upload-card {
+            transition: all 0.2s ease;
+            border: 2px dashed #334155;
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        .upload-card:hover {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .preview-img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .copy-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 99px;
+            z-index: 100;
+            display: none;
+        }
+
+        .result-section {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+    <div id="toast" class="copy-toast shadow-lg">Berhasil disalin!</div>
+
+    <div class="max-w-6xl mx-auto px-4 pt-10">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-pink-400">
+                    AI Photo Studio Pro
+                </h1>
+                <p class="text-slate-400 mt-1 text-sm md:text-base">Visual Produk & Generator Video Motion AI.</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Sidebar -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="gradient-border p-6 shadow-xl">
+                    <h2 class="text-lg font-semibold mb-6 flex items-center gap-2 border-b border-slate-700 pb-3">
+                        <i class="fas fa-upload text-indigo-400"></i> Sumber Gambar
+                    </h2>
+                    
+                    <div class="mb-5">
+                        <label class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2 block">1. Wajah (Model)</label>
+                        <div onclick="document.getElementById('faceInput').click()" class="upload-card p-3 rounded-xl cursor-pointer text-center">
+                            <input type="file" id="faceInput" class="hidden" accept="image/*" onchange="handlePreview(this, 'facePreview')">
+                            <div id="facePreview" class="text-slate-500 py-4">
+                                <i class="fas fa-user-circle text-2xl mb-2"></i>
+                                <p class="text-[10px]">Klik untuk unggah wajah</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <label class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2 block">2. Produk (Pakaian)</label>
+                        <div onclick="document.getElementById('clothInput').click()" class="upload-card p-3 rounded-xl cursor-pointer text-center">
+                            <input type="file" id="clothInput" class="hidden" accept="image/*" onchange="handlePreview(this, 'clothPreview')">
+                            <div id="clothPreview" class="text-slate-500 py-4">
+                                <i class="fas fa-tshirt text-2xl mb-2"></i>
+                                <p class="text-[10px]">Klik untuk unggah pakaian</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2 block">3. Latar (Background)</label>
+                        <div onclick="document.getElementById('bgInput').click()" class="upload-card p-3 rounded-xl cursor-pointer text-center">
+                            <input type="file" id="bgInput" class="hidden" accept="image/*" onchange="handlePreview(this, 'bgPreview')">
+                            <div id="bgPreview" class="text-slate-500 py-4">
+                                <i class="fas fa-image text-2xl mb-2"></i>
+                                <p class="text-[10px]">Klik untuk unggah latar</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 class="text-lg font-semibold mb-4 mt-8 flex items-center gap-2 border-b border-slate-700 pb-3">
+                        <i class="fas fa-video text-indigo-400"></i> Kamera & Rasio
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2 block">Sudut Kamera (Angle)</label>
+                            <select id="cameraAngle" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-300">
+                                <option value="Eye Level (Normal)">Sejajar Mata (Normal)</option>
+                                <option value="Low Angle (Heroic)">Sudut Rendah (Kesan Gagah)</option>
+                                <option value="High Angle (From Above)">Sudut Tinggi (Dari Atas)</option>
+                                <option value="Cinematic Drone Shot">Tangkapan Drone Sinematik</option>
+                                <option value="Extreme Close up shot">Tampilan Sangat Dekat (Detail)</option>
+                                <option value="Full Body Shot">Seluruh Badan</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-3 block">Rasio Konten</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="setRatio('1:1', this)" class="ratio-btn chip-active bg-slate-900 border border-slate-700 p-2 rounded-md text-[10px] font-bold">1:1</button>
+                                <button onclick="setRatio('9:16', this)" class="ratio-btn bg-slate-900 border border-slate-700 p-2 rounded-md text-[10px] font-bold">9:16</button>
+                                <button onclick="setRatio('16:9', this)" class="ratio-btn bg-slate-900 border border-slate-700 p-2 rounded-md text-[10px] font-bold">16:9</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workspace -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Detail Produk & Animasi</label>
+                    <textarea id="additionalPrompt" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white h-24 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
+                        placeholder="Contoh: Gaun pesta elegan, warna merah satin, ingin ada efek angin pada rambut..."></textarea>
+                    
+                    <button id="generateBtn" 
+                        class="w-full mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 shadow-lg transition-all active:scale-[0.98]">
+                        <i class="fas fa-bolt"></i>
+                        PROSES GAMBAR & PROMPT VIDEO
+                    </button>
+                </div>
+
+                <div id="outputContainer" class="hidden space-y-6">
+                    <div id="loadingState" class="hidden flex flex-col items-center justify-center py-24 bg-slate-800/30 rounded-2xl border-2 border-dashed border-slate-700 text-center">
+                        <div class="loader-ring mb-4"></div>
+                        <p class="text-slate-400 font-medium">Merancang visual jualan & instruksi video...</p>
+                    </div>
+
+                    <div id="resultCard" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Left: Visual -->
+                        <div class="space-y-4">
+                            <div class="relative group rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 shadow-2xl">
+                                <img id="mainImage" src="" alt="AI Result" class="w-full h-auto">
+                                <button onclick="downloadImage()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-3 rounded-full transition-all">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                            <div class="bg-indigo-600/10 border border-indigo-500/20 p-4 rounded-xl">
+                                <h4 class="text-xs font-bold text-indigo-400 uppercase mb-1">Status</h4>
+                                <p class="text-[10px] text-indigo-200">Foto siap diunggah atau dijadikan referensi video.</p>
+                            </div>
+                        </div>
+
+                        <!-- Right: Marketing & Video Prompts -->
+                        <div class="space-y-4">
+                            <!-- Video Prompt Box -->
+                            <div class="result-section p-5 rounded-2xl border border-indigo-500/30 bg-indigo-900/10">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                        <i class="fas fa-video"></i> Video Animation Prompt
+                                    </h3>
+                                    <button onclick="copyText('videoPromptContent')" class="text-indigo-400 hover:text-indigo-300 text-xs">Salin</button>
+                                </div>
+                                <div id="videoPromptContent" class="text-xs text-indigo-100 bg-black/30 p-3 rounded-lg border border-indigo-500/10 italic leading-relaxed">
+                                    <!-- Video Prompt Here -->
+                                </div>
+                                <p class="text-[9px] text-slate-500 mt-2">Gunakan prompt di atas pada Kling AI, Luma, atau Runway untuk membuat video.</p>
+                            </div>
+
+                            <!-- Social Media Box -->
+                            <div class="result-section p-5 rounded-2xl">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <i class="fas fa-hashtag"></i> Copywriting Viral (TikTok Style)
+                                    </h3>
+                                    <button onclick="copyText('marketingContent')" class="text-indigo-400 hover:text-indigo-300 text-xs">Salin</button>
+                                </div>
+                                <div id="marketingContent" class="text-xs text-slate-300 whitespace-pre-wrap max-h-60 overflow-y-auto pr-2">
+                                    <!-- Marketing text here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="errorMsg" class="hidden bg-red-500/10 border border-red-500/50 p-4 rounded-xl text-red-400 text-center text-sm"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "AIzaSyBpkO1xxM4D1N_2ep8hQtPDK75k44FR_RU";
+        let currentRatio = "1:1";
+        const imagesData = { face: null, cloth: null, background: null };
+
+        function setRatio(ratio, btn) {
+            currentRatio = ratio;
+            document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('chip-active'));
+            btn.classList.add('chip-active');
+        }
+
+        function handlePreview(input, previewId) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagesData[previewId.replace('Preview', '')] = e.target.result.split(',')[1];
+                document.getElementById(previewId).innerHTML = `<img src="${e.target.result}" class="preview-img">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function fetchWithRetry(url, options, retries = 5) {
+            let delay = 1000;
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                } catch (e) {}
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+            throw new Error("Gagal menghubungi server AI.");
+        }
+
+        async function generateContent() {
+            const generateBtn = document.getElementById('generateBtn');
+            const outputContainer = document.getElementById('outputContainer');
+            const loadingState = document.getElementById('loadingState');
+            const resultCard = document.getElementById('resultCard');
+            const errorMsg = document.getElementById('errorMsg');
+            const mainImage = document.getElementById('mainImage');
+            const videoPromptContent = document.getElementById('videoPromptContent');
+            const marketingContent = document.getElementById('marketingContent');
+
+            errorMsg.classList.add('hidden');
+            outputContainer.classList.remove('hidden');
+            loadingState.classList.remove('hidden');
+            resultCard.classList.add('hidden');
+            generateBtn.disabled = true;
+
+            const angle = document.getElementById('cameraAngle').value;
+            const extra = document.getElementById('additionalPrompt').value.trim();
+
+            try {
+                // 1. Generate Visual
+                const visualInstruction = `High-end professional advertising photo. 
+                    Model face: from face reference. Clothing: from cloth reference. Background: from background reference.
+                    Camera Angle: ${angle}. Ratio: ${currentRatio}. Context: ${extra}. Studio lighting, ultra realistic, 8k.`;
+
+                const visualResponse = await fetchWithRetry(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: visualInstruction },
+                                    ...(imagesData.face ? [{ inlineData: { mimeType: "image/png", data: imagesData.face } }] : []),
+                                    ...(imagesData.cloth ? [{ inlineData: { mimeType: "image/png", data: imagesData.cloth } }] : []),
+                                    ...(imagesData.background ? [{ inlineData: { mimeType: "image/png", data: imagesData.background } }] : [])
+                                ]
+                            }],
+                            generationConfig: { responseModalities: ["IMAGE"] }
+                        })
+                    }
+                );
+
+                const vData = await visualResponse.json();
+                const b64 = vData.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                if (!b64) throw new Error("Gagal generate visual.");
+                mainImage.src = `data:image/png;base64,${b64}`;
+
+                // 2. Generate Video Prompt & Marketing Text (TikTok optimized)
+                const textInstruction = `Aplikasi jualan affiliate. Produk: "${extra || 'Fashion Item'}". 
+                    Hasilkan JSON dengan format:
+                    {
+                      "video_prompt": "Prompt teknis bahasa Inggris untuk Video AI (contoh: slow motion cinematic, camera panning, hair blowing in wind, 4k)",
+                      "marketing_text": "Buatkan caption TikTok viral yang SINGKAT, PADAT, dan MENGGODA (Hook 1 kalimat, Deskripsi 1 kalimat, CTA 1 kalimat). Tambahkan TEPAT 5 hashtag viral."
+                    }`;
+
+                const textResponse = await fetchWithRetry(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: textInstruction }] }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        })
+                    }
+                );
+
+                const tData = await textResponse.json();
+                const resultObj = JSON.parse(tData.candidates[0].content.parts[0].text);
+                
+                videoPromptContent.innerText = resultObj.video_prompt;
+                marketingContent.innerText = resultObj.marketing_text;
+
+                loadingState.classList.add('hidden');
+                resultCard.classList.remove('hidden');
+
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorMsg.classList.remove('hidden');
+                outputContainer.classList.add('hidden');
+            } finally {
+                generateBtn.disabled = false;
+            }
+        }
+
+        function copyText(id) {
+            const text = document.getElementById(id).innerText;
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.href = document.getElementById('mainImage').src;
+            link.download = `affiliate-pro-${Date.now()}.png`;
+            link.click();
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', generateContent);
+    </script>
+</body>
+</html>
