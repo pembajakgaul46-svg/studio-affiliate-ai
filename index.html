@@ -151,14 +151,12 @@
 
             try {
                 // Gunakan Gemini 1.5 Flash - Ini Alamat URL yang Benar dan Stabil
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                // Ganti baris URL lama dengan ini:
+                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
                 const payload = {
                     contents: [{
-                        parts: [
-                            { text: `Visual Produk: ${extra}. Kamera: ${document.getElementById('cameraAngle').value}. Rasio: ${currentRatio}. Buatkan copywriting TikTok singkat + 5 hashtag dan satu baris video motion prompt.` },
-                            ...(imagesData.face ? [{ inlineData: { mimeType: "image/png", data: imagesData.face } }] : [])
-                        ]
+                        parts: [{ text: `Produk: ${extra}. Kamera: ${document.getElementById('cameraAngle').value}. Buat copywriting TikTok singkat + 5 hashtag.` }]
                     }]
                 };
 
